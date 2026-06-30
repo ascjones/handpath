@@ -1,4 +1,5 @@
-using Toybox.WatchUi;
+import Toybox.Lang;
+import Toybox.WatchUi;
 
 class HandPathDelegate extends WatchUi.BehaviorDelegate {
 

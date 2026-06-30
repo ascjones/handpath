@@ -1,4 +1,5 @@
-using Toybox.Math;
+import Toybox.Lang;
+import Toybox.Math;
 
 // Swing phase states
 enum {
@@ -235,8 +236,7 @@ class SwingDetector {
         // to get horizontal "forward" (toward target).
         //
         // Y_axis in watch frame = [0, 1, 0]
-        var outX = gnz * 0.0f - gny * 0.0f;  // This simplifies...
-        // Better: use the Y component of the watch frame directly
+        // Use the Y component of the watch frame directly
         // cross(grav_normalized, [0,1,0]):
         var crossX = gny * 0.0f - gnz * 1.0f; // = -gnz
         var crossY = gnz * 0.0f - gnx * 0.0f; // = 0

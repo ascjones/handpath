@@ -1,7 +1,7 @@
 <iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
     <iq:application
         entry="HandPathApp"
-        id="com.handpath.golfswing"
+        id="8a8f43fa-7c75-4fd4-87f5-5711a7eb1c2a"
         launcherIcon="@Drawables.LauncherIcon"
         minSdkVersion="3.1.0"
         name="@Strings.AppName"

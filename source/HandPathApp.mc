@@ -1,5 +1,6 @@
-using Toybox.Application;
-using Toybox.WatchUi;
+import Toybox.Application;
+import Toybox.Lang;
+import Toybox.WatchUi;
 
 class HandPathApp extends Application.AppBase {
 

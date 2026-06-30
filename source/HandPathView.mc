@@ -1,8 +1,10 @@
-using Toybox.WatchUi;
-using Toybox.Graphics;
-using Toybox.Sensor;
-using Toybox.Timer;
-using Toybox.Math;
+import Toybox.Attention;
+import Toybox.Graphics;
+import Toybox.Lang;
+import Toybox.Math;
+import Toybox.Sensor;
+import Toybox.Timer;
+import Toybox.WatchUi;
 
 class HandPathView extends WatchUi.View {
 
@@ -251,9 +253,9 @@ class HandPathView extends WatchUi.View {
             }
 
             // Vibrate to notify
-            if (Toybox.Attention has :vibrate) {
-                var vibeData = [new Toybox.Attention.VibeProfile(50, 200)];
-                Toybox.Attention.vibrate(vibeData);
+            if (Attention has :vibrate) {
+                var vibeData = [new Attention.VibeProfile(50, 200)];
+                Attention.vibrate(vibeData);
             }
         }
 
