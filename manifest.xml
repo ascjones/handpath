@@ -8,6 +8,7 @@
         type="watch-app">
 
         <iq:products>
+            <iq:product id="marq2" />
             <iq:product id="fenix7" />
             <iq:product id="fenix7s" />
             <iq:product id="fenix7x" />
