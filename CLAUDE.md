@@ -9,11 +9,13 @@ improvement roadmap — don't rediscover them.
 - `./build.sh [device]` — strict-typecheck (`-l 3`) build; default device
   `marq2` (the dev's watch, MARQ Golfer Gen 2).
 - `./build.sh sim [device]` — build + deploy to the simulator.
-- SDK at `~/.local/share/garmin-connectiq-sdk/9.2.0`, developer key at
+- SDK resolved from `~/.Garmin/ConnectIQ/current-sdk.cfg` (the SDK
+  Manager's active SDK); developer key at
   `~/.Garmin/ConnectIQ/developer_key.der` (override: `CIQ_SDK`, `CIQ_KEY`).
-- Ubuntu 24.04 quirk: the simulator and SDK Manager need webkit2gtk-4.0
-  compat libs via `LD_LIBRARY_PATH` (build.sh handles it; see
-  `~/.local/share/garmin-connectiq-tools/bin/sdkmanager-run`).
+- `scripts/setup-ubuntu.sh` bootstraps a fresh Ubuntu 24.04 machine
+  (SDK Manager, webkit2gtk-4.0 compat libs, key). Ubuntu 24.04 quirk: the
+  simulator and SDK Manager need jammy webkit libs via `LD_LIBRARY_PATH`
+  plus a helper-process symlink — build.sh and the setup script handle it.
 - Device profiles are installed per-device via the SDK Manager GUI (needs
   Garmin login — only the user can do this). Missing profile ⇒
   "Invalid device id" from monkeyc.

@@ -18,6 +18,9 @@ limitations; see [PLAN.md](PLAN.md) for defects and the improvement roadmap
 
 Requires the [Connect IQ SDK](https://developer.garmin.com/connect-iq/sdk/),
 a developer key, and device profiles installed via the SDK Manager.
+On a fresh Ubuntu 24.04 machine, `scripts/setup-ubuntu.sh` bootstraps all
+of it (the SDK download itself needs a Garmin login in the GUI).
+Deployment and accuracy-testing protocol: [docs/TESTING.md](docs/TESTING.md).
 
 ```sh
 ./build.sh              # build bin/HandPath-marq2.prg

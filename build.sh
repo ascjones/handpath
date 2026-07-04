@@ -8,7 +8,12 @@
 # the target (installed via the SDK Manager).
 set -eu
 
-SDK="${CIQ_SDK:-$HOME/.local/share/garmin-connectiq-sdk/9.2.0}"
+# SDK: $CIQ_SDK, else the SDK Manager's active SDK, else a legacy local path.
+CFG="$HOME/.Garmin/ConnectIQ/current-sdk.cfg"
+if [ -n "${CIQ_SDK:-}" ]; then SDK="$CIQ_SDK"
+elif [ -r "$CFG" ]; then SDK="$(cat "$CFG")"
+else SDK="$HOME/.local/share/garmin-connectiq-sdk/9.2.0"
+fi
 KEY="${CIQ_KEY:-$HOME/.Garmin/ConnectIQ/developer_key.der}"
 # Ubuntu 24.04 dropped webkit2gtk-4.0, which the simulator links; jammy's
 # libs are extracted here (see garmin-connectiq-tools/bin/sdkmanager-run).
