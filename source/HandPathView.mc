@@ -19,6 +19,9 @@ class HandPathView extends WatchUi.View {
     // Live accel display
     private var _liveMag as Number = 0;
 
+    // Tracks detector readiness so the buzz fires once per arming
+    private var _wasReady as Boolean = false;
+
     function initialize() {
         View.initialize();
         _detector = new SwingDetector();
@@ -131,11 +134,19 @@ class HandPathView extends WatchUi.View {
     }
 
     private function _drawWaiting(dc as Dc, cx as Number, y as Number) as Void {
-        dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y + 15, Graphics.FONT_SMALL, "READY", Graphics.TEXT_JUSTIFY_CENTER);
+        if (_detector.isReady()) {
+            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y + 15, Graphics.FONT_SMALL, "READY", Graphics.TEXT_JUSTIFY_CENTER);
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y + 45, Graphics.FONT_XTINY, "Take a swing", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y + 45, Graphics.FONT_XTINY, "Take a swing", Graphics.TEXT_JUSTIFY_CENTER);
+        } else {
+            dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y + 15, Graphics.FONT_SMALL, "HOLD STILL", Graphics.TEXT_JUSTIFY_CENTER);
+
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y + 45, Graphics.FONT_XTINY, "Arming...", Graphics.TEXT_JUSTIFY_CENTER);
+        }
 
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y + 65, Graphics.FONT_XTINY, "Target: +5° to +15°", Graphics.TEXT_JUSTIFY_CENTER);
@@ -207,6 +218,7 @@ class HandPathView extends WatchUi.View {
         } catch (e) {
         }
         _listening = false;
+        _wasReady = false;
         _statusText = "Press START\nto begin";
         WatchUi.requestUpdate();
     }
@@ -259,6 +271,20 @@ class HandPathView extends WatchUi.View {
             }
         }
 
+        // Double-tick buzz when the detector arms (wrist held still
+        // long enough for a trustworthy gravity estimate)
+        var ready = _detector.isReady();
+        if (ready && !_wasReady) {
+            if (Attention has :vibrate) {
+                Attention.vibrate([
+                    new Attention.VibeProfile(40, 80),
+                    new Attention.VibeProfile(0, 80),
+                    new Attention.VibeProfile(40, 80)
+                ]);
+            }
+        }
+        _wasReady = ready;
+
         WatchUi.requestUpdate();
     }
 
@@ -272,7 +298,7 @@ class HandPathView extends WatchUi.View {
 
     private function _phaseLabel() as String {
         switch (_detector.phase) {
-            case PHASE_IDLE: return "WAITING";
+            case PHASE_IDLE: return _detector.isReady() ? "READY" : "HOLD STILL";
             case PHASE_BACKSWING: return "BACKSWING";
             case PHASE_TOP: return "TRANSITION";
             case PHASE_DOWNSWING: return "DOWNSWING";
@@ -283,7 +309,8 @@ class HandPathView extends WatchUi.View {
 
     private function _phaseColor() as Number {
         switch (_detector.phase) {
-            case PHASE_IDLE: return Graphics.COLOR_DK_GRAY;
+            case PHASE_IDLE: return _detector.isReady()
+                ? Graphics.COLOR_GREEN : Graphics.COLOR_DK_GRAY;
             case PHASE_BACKSWING: return Graphics.COLOR_YELLOW;
             case PHASE_TOP: return Graphics.COLOR_ORANGE;
             case PHASE_DOWNSWING: return Graphics.COLOR_BLUE;

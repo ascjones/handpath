@@ -29,11 +29,20 @@ wrist simultaneously and compare IDDX numbers per swing.
 ### Session protocol (~20–30 min)
 
 - One club per session block (start with 7-iron), 20+ full swings.
+- Before each swing: address the ball and hold still until the watch gives
+  its double-tick "armed" buzz (~1–2 s; screen shows a green READY) *and*
+  the deWiz sounds. A swing started before the buzz is not measured at all
+  — the detector needs the still moment to trust its gravity estimate.
+  Waggles/regrips reset the arming; settle still again after the last one.
 - After each swing: the watch shows its IDDX on screen, the deWiz app shows
-  its number. Record the pair.
+  its number. Record the pair. If you swung early and the watch shows
+  nothing, log a blank `watch_iddx` with a note — that's a protocol miss,
+  not a device miss.
 - Deliberately mix in 5–10 practice swings/waggles and walk around between
   balls; log whether the watch correctly ignored them. The false-trigger
-  rate matters as much as accuracy.
+  rate matters as much as accuracy. Walking and fidgeting never arm the
+  detector, so false triggers should be rare — any that still occur are
+  worth a detailed note.
 - Later sessions: driver and a wedge — swing length changes the
   top-of-backswing geometry, where the model is most likely to drift.
 

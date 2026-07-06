@@ -45,6 +45,20 @@ class SwingDetector {
     // Minimum backswing duration in samples (at 25Hz) to filter out false triggers
     private var _minBackswingSamples as Number = 10; // 0.4s
 
+    // Quiet-wrist "armed" detection: the resting-gravity filter needs
+    // ~1 s of stillness after motion before its estimate is trustworthy.
+    // Swings are only measured when started from an armed state.
+    private var _readyQuietThreshold as Number = 250;
+    private var _readySampleTarget as Number = 20; // 0.8s at 25Hz
+    private var _readySampleCount as Number = 0;
+    // The takeaway ramps through the 250-600 mG band before crossing the
+    // motion-start threshold, so "armed" must latch across brief non-quiet
+    // stretches; anything longer than the grace window is fidgeting or
+    // walking, not a takeaway, and disarms.
+    private var _armed as Boolean = false;
+    private var _armGraceSamples as Number = 15; // 0.6s at 25Hz
+    private var _notQuietCount as Number = 0;
+
     // --- Smoothing ---
     private var _magHistory as Array<Number> = [];
     private var _historySize as Number = 4;
@@ -97,8 +111,28 @@ class SwingDetector {
                 case PHASE_IDLE:
                     // Continuously update resting gravity estimate
                     _updateRestingGravity(sx, sy, sz);
-                    if (smoothed > _motionStartThreshold) {
+                    if (smoothed < _readyQuietThreshold) {
+                        _notQuietCount = 0;
+                        if (_readySampleCount < _readySampleTarget) {
+                            _readySampleCount++;
+                        }
+                        if (_readySampleCount >= _readySampleTarget) {
+                            _armed = true;
+                        }
+                    } else {
+                        _readySampleCount = 0;
+                        _notQuietCount++;
+                        if (_notQuietCount > _armGraceSamples) {
+                            _armed = false;
+                        }
+                    }
+                    // Unarmed motion is ignored: without a settled gravity
+                    // estimate the measurement would be untrustworthy.
+                    if (_armed && smoothed > _motionStartThreshold) {
                         phase = PHASE_BACKSWING;
+                        _armed = false;
+                        _readySampleCount = 0;
+                        _notQuietCount = 0;
                         _backswingSampleCount = 0;
                         _topSamples = [];
                     }
@@ -327,8 +361,17 @@ class SwingDetector {
         return [sx / n, sy / n, sz / n] as Array<Float>;
     }
 
+    // Armed and safe to start a swing: idle with the wrist quiet long
+    // enough that the resting-gravity estimate has converged.
+    function isReady() as Boolean {
+        return phase == PHASE_IDLE && _armed;
+    }
+
     function reset() as Void {
         phase = PHASE_IDLE;
+        _armed = false;
+        _readySampleCount = 0;
+        _notQuietCount = 0;
         _magHistory = [];
         _topSamples = [];
         _gravityVec = null;
