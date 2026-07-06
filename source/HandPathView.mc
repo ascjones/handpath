@@ -22,6 +22,13 @@ class HandPathView extends WatchUi.View {
     // Tracks detector readiness so the buzz fires once per arming
     private var _wasReady as Boolean = false;
 
+    // True once a simulator demo swing has run (shows the active screen
+    // without a live sensor listener); set only by (:debug) code
+    private var _demoActive as Boolean = false;
+    (:debug) private var _demo as DemoSwing?;
+    (:debug) private var _demoTimer as Timer.Timer?;
+    (:debug) private var _demoCount as Number = 0;
+
     function initialize() {
         View.initialize();
         _detector = new SwingDetector();
@@ -45,7 +52,7 @@ class HandPathView extends WatchUi.View {
         var h = dc.getHeight();
         var cx = w / 2;
 
-        if (!_listening) {
+        if (!_listening && !_demoActive) {
             _drawIdleScreen(dc, cx, w, h);
             return;
         }
@@ -55,33 +62,33 @@ class HandPathView extends WatchUi.View {
 
     private function _drawIdleScreen(dc as Dc, cx as Number, w as Number, h as Number) as Void {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h / 2 - 40, Graphics.FONT_SMALL, "IDDX", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h / 2 - 76, Graphics.FONT_LARGE, "IDDX", Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h / 2 - 10, Graphics.FONT_XTINY, "Initial Downswing", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.drawText(cx, h / 2 + 8, Graphics.FONT_XTINY, "Direction", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h / 2 - 18, Graphics.FONT_TINY, "Initial Downswing", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h / 2 + 8, Graphics.FONT_TINY, "Direction", Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h / 2 + 40, Graphics.FONT_XTINY, _statusText, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h / 2 + 52, Graphics.FONT_SMALL, _statusText, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     private function _drawActiveScreen(dc as Dc, cx as Number, w as Number, h as Number) as Void {
-        var y = 22;
+        var y = 24;
 
         // Phase indicator with colored dot
         var phaseColor = _phaseColor();
         dc.setColor(phaseColor, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(cx - 40, y + 7, 4);
+        dc.fillCircle(cx - 75, y + 12, 6);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY, _phaseLabel(), Graphics.TEXT_JUSTIFY_CENTER);
-        y += 22;
+        dc.drawText(cx, y, Graphics.FONT_TINY, _phaseLabel(), Graphics.TEXT_JUSTIFY_CENTER);
+        y += 28;
 
         // Swing count
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY,
+        dc.drawText(cx, y, Graphics.FONT_TINY,
             "Swing " + _detector.swingCount,
             Graphics.TEXT_JUSTIFY_CENTER);
-        y += 25;
+        y += 30;
 
         if (_detector.swingCount > 0) {
             _drawIddxResult(dc, cx, w, h, y);
@@ -101,22 +108,18 @@ class HandPathView extends WatchUi.View {
         var sign = "";
         if (iddx > 0.0f) { sign = "+"; }
 
-        // Big IDDX number
+        // Big IDDX number — advance by the real font height so the
+        // rows below never overlap it
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_NUMBER_HOT,
             sign + iddx.format("%.0f") + "°",
             Graphics.TEXT_JUSTIFY_CENTER);
-        y += 55;
-
-        // Label
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY, "IDDX", Graphics.TEXT_JUSTIFY_CENTER);
-        y += 18;
+        y += dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
 
         // Feedback text
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY, _iddxFeedback(iddx), Graphics.TEXT_JUSTIFY_CENTER);
-        y += 22;
+        dc.drawText(cx, y, Graphics.FONT_SMALL, _iddxFeedback(iddx), Graphics.TEXT_JUSTIFY_CENTER);
+        y += dc.getFontHeight(Graphics.FONT_SMALL) + 4;
 
         // Session average
         if (_iddxHistory.size() > 1) {
@@ -124,7 +127,7 @@ class HandPathView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
             var avgSign = "";
             if (avg > 0.0f) { avgSign = "+"; }
-            dc.drawText(cx, y, Graphics.FONT_XTINY,
+            dc.drawText(cx, y, Graphics.FONT_TINY,
                 "Avg: " + avgSign + avg.format("%.1f") + "°",
                 Graphics.TEXT_JUSTIFY_CENTER);
         }
@@ -136,20 +139,20 @@ class HandPathView extends WatchUi.View {
     private function _drawWaiting(dc as Dc, cx as Number, y as Number) as Void {
         if (_detector.isReady()) {
             dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, y + 15, Graphics.FONT_SMALL, "READY", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, y + 10, Graphics.FONT_LARGE, "READY", Graphics.TEXT_JUSTIFY_CENTER);
 
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, y + 45, Graphics.FONT_XTINY, "Take a swing", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, y + 62, Graphics.FONT_SMALL, "Take a swing", Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, y + 15, Graphics.FONT_SMALL, "HOLD STILL", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, y + 10, Graphics.FONT_LARGE, "HOLD STILL", Graphics.TEXT_JUSTIFY_CENTER);
 
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, y + 45, Graphics.FONT_XTINY, "Arming...", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, y + 62, Graphics.FONT_SMALL, "Arming...", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y + 65, Graphics.FONT_XTINY, "Target: +5° to +15°", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, y + 102, Graphics.FONT_TINY, "Target: +5° to +15°", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // Draw small dots for recent IDDX values, color-coded
@@ -244,19 +247,20 @@ class HandPathView extends WatchUi.View {
         if (x == null || y == null || z == null) { return; }
         if (x.size() == 0) { return; }
 
+        processSamples(x as Array<Number>, y as Array<Number>, z as Array<Number>);
+    }
+
+    // Shared batch pipeline for live sensor data and simulator demo swings
+    function processSamples(x as Array<Number>, y as Array<Number>, z as Array<Number>) as Void {
         // Update live G display
         var last = x.size() - 1;
-        var lx = (x[last] as Number).toFloat();
-        var ly = (y[last] as Number).toFloat();
-        var lz = (z[last] as Number).toFloat();
+        var lx = x[last].toFloat();
+        var ly = y[last].toFloat();
+        var lz = z[last].toFloat();
         _liveMag = Math.sqrt(lx * lx + ly * ly + lz * lz).toNumber();
 
         // Feed to detector
-        var completed = _detector.processBatch(
-            x as Array<Number>,
-            y as Array<Number>,
-            z as Array<Number>
-        );
+        var completed = _detector.processBatch(x, y, z);
 
         if (completed) {
             _iddxHistory.add(_detector.iddxDeg);
@@ -286,6 +290,33 @@ class HandPathView extends WatchUi.View {
         _wasReady = ready;
 
         WatchUi.requestUpdate();
+    }
+
+    // Play one scripted swing through the real detector (simulator has no
+    // real motion). One batch per second, mirroring the live sensor cadence
+    // so the phase screens are visible as they happen.
+    (:debug) function demoSwing() as Void {
+        if (_demo != null) { return; } // one at a time
+        _demoActive = true;
+        _demo = new DemoSwing(_demoCount);
+        _demoCount++;
+        if (_demoTimer == null) {
+            _demoTimer = new Timer.Timer();
+        }
+        (_demoTimer as Timer.Timer).start(method(:onDemoTick), 1000, true);
+        WatchUi.requestUpdate();
+    }
+
+    (:debug) function onDemoTick() as Void {
+        var demo = _demo;
+        if (demo == null) { return; }
+        var batch = demo.nextBatch();
+        if (batch == null) {
+            (_demoTimer as Timer.Timer).stop();
+            _demo = null;
+            return;
+        }
+        processSamples(batch[0], batch[1], batch[2]);
     }
 
     private function _sessionAverage() as Float {

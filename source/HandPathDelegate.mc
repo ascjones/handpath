@@ -37,4 +37,15 @@ class HandPathDelegate extends WatchUi.BehaviorDelegate {
         }
         return false;
     }
+
+    // DOWN button (debug builds only) - play a scripted demo swing so the
+    // UI can be exercised in the simulator. Disabled while a real sensor
+    // session is running so it can't contaminate on-wrist data.
+    (:debug) function onNextPage() as Boolean {
+        if (_view.isListening()) {
+            return false;
+        }
+        _view.demoSwing();
+        return true;
+    }
 }

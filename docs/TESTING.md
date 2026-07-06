@@ -9,6 +9,13 @@
    ```sh
    cp bin/HandPath-marq2.prg /run/user/1000/gvfs/mtp*/Internal*/GARMIN/Apps/
    ```
+   If `/run/user/1000/gvfs` is empty (no gvfs-fuse bridge), use gio
+   instead — find the device URI, then copy and eject:
+   ```sh
+   gio mount -li | grep activation_root   # → mtp://091e_5009_.../
+   gio copy bin/HandPath-marq2.prg "mtp://<device>/Internal Storage/GARMIN/Apps/HandPath-marq2.prg"
+   gio mount -u "mtp://<device>/"
+   ```
 4. Eject and unplug. HandPath appears at the bottom of the apps list
    (START button → scroll down).
 
